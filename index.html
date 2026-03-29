@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Authorship Alignment Evaluator</title>
+    <style>
+        :root {
+            --primary: #1A202C;
+            --secondary: #4A5568;
+            --accent: #3182CE;
+            --bg: #F7FAFC;
+            --card-bg: #FFFFFF;
+            --border: #E2E8F0;
+            --success: #38A169;
+            --danger: #E53E3E;
+            --radius: 6px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--primary);
+            line-height: 1.5;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        h1 { font-size: 24px; margin-bottom: 8px; text-align: center; }
+        .subtitle { color: var(--secondary); text-align: center; margin-bottom: 48px; font-size: 15px; }
+
+        .section-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 32px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .helper-text { font-size: 14px; color: var(--secondary); margin-bottom: 24px; line-height: 1.6; }
+
+        /* Task Setup */
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .setup-item {
+            display: flex;
+            flex-direction: column;
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .setup-label { font-weight: 600; margin-bottom: 12px; font-size: 14px; text-align: center; }
+        .radio-group { display: flex; gap: 4px; }
+        
+        .radio-group label {
+            flex: 1; text-align: center; cursor: pointer; font-size: 13px;
+            background: var(--bg); border-radius: 4px; border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+        
+        .radio-group input { display: none; }
+        .radio-label-content { display: block; padding: 6px 0; border-radius: 4px; }
+        .radio-group input:checked + .radio-label-content { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; }
+
+        /* Accordion */
+        .accordion-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: border-color 0.2s;
+        }
+
+        .accordion-item.locked {
+            border-left: 4px solid var(--success);
+        }
+
+        .accordion-header {
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .accordion-header:hover { background: #FAFAFA; }
+
+        .accordion-title { font-weight: 600; font-size: 16px; margin: 0; }
+        .accordion-desc { font-size: 13px; color: var(--secondary); margin-top: 4px; }
+        
+        .accordion-status { 
+            font-size: 12px; font-weight: 600; color: var(--secondary); 
+            display: flex; align-items: center; gap: 8px; 
+        }
+        
+        .status-badge { padding: 4px 10px; border-radius: 20px; background: var(--border); }
+        .status-badge.locked { background: #C6F6D5; color: #22543D; }
+
+        .accordion-body {
+            display: none;
+            padding: 0 16px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .accordion-item.open .accordion-body { display: block; }
+
+        .level-block { margin-top: 24px; padding: 16px; background: var(--bg); border-radius: var(--radius); }
+        .level-title { font-weight: 600; margin: 0 0 12px; font-size: 14px; }
+
+        .checkbox-item { display: flex; align-items: flex-start; margin-bottom: 10px; cursor: pointer; }
+        .checkbox-item input { margin-top: 4px; margin-right: 12px; cursor: pointer; }
+        .checkbox-text { font-size: 14px; color: var(--primary); line-height: 1.4; }
+        
+        .disqualifier-label { margin-top: 16px; margin-bottom: 8px; font-size: 12px; font-weight: bold; color: var(--danger); text-transform: uppercase; letter-spacing: 0.5px; }
+        .disqualifier-item { color: var(--danger); }
+        .disqualifier-item .checkbox-text { color: var(--danger); }
+
+        .confidence-check {
+            background: #EBF8FF;
+            padding: 16px;
+            border-radius: var(--radius);
+            margin-top: 24px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .conf-error { font-size: 12px; color: var(--secondary); margin-top: 8px; margin-left: 28px; display: block; }
+
+        .btn {
+            background: var(--primary); color: white; border: none; padding: 10px 20px;
+            border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .btn:hover:not(:disabled) { opacity: 0.9; }
+        .btn:disabled { background: var(--border); color: var(--secondary); cursor: not-allowed; }
+        
+        .btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--border); }
+        .btn-outline:hover { background: #F1F5F9; }
+        
+        .panel-actions { display: flex; justify-content: flex-end; margin-top: 24px; }
+        .submit-section { text-align: center; margin-top: 40px; }
+        .submit-section .btn { font-size: 16px; padding: 12px 32px; }
+
+        /* Results Card */
+        #results-card { display: none; margin-top: 48px; border: 1px solid var(--border); padding: 32px; border-radius: var(--radius); background: var(--card-bg); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
+        .results-header { text-align: center; margin-bottom: 32px; }
+        .results-header h2 { margin: 0 0 8px; font-size: 22px; }
+        .results-header p { margin: 0; color: var(--secondary); font-size: 14px; }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .result-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            text-align: center;
+        }
+
+        .result-box h4 { margin: 0 0 12px; color: var(--secondary); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .result-box .val { font-size: 32px; font-weight: bold; color: var(--primary); margin-bottom: 4px; }
+        .result-box .desc { font-size: 14px; font-weight: 500; }
+
+        .alignment-banner {
+            padding: 16px 24px;
+            border-radius: var(--radius);
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .alignment-banner h3 { margin: 0 0 8px; font-size: 18px; }
+        .alignment-banner p { margin: 0; font-size: 14px; line-height: 1.5; }
+
+        .align-within { background: #C6F6D5; color: #22543D; }
+        .align-below { background: #FEFCBF; color: #744210; }
+        .align-above { background: #EBF8FF; color: #2A4365; }
+
+        .breakdown-list { border-top: 1px solid var(--border); }
+        .breakdown-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .breakdown-row strong { color: var(--primary); }
+        .breakdown-row span { color: var(--secondary); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Authorship Alignment Evaluator</h1>
+        <p class="subtitle">Measure authorship behavior against your task conditions.</p>
+        
+        <div id="task-setup">
+            <div class="section-header">1. Task Setup</div>
+            <p class="helper-text">Set the internal conditions of your task. We will compute a targeted expectation based on these values to benchmark your actual self-assessment against.</p>
+            <div class="setup-grid" id="setup-grid"></div>
+        </div>
+
+        <div id="evaluation-section">
+            <div class="section-header">2. Evaluation Domains</div>
+            <p class="helper-text">Review the four domains below. Check all indicators that honestly apply. To qualify for a level, you must trigger 0 disqualifiers and select at least 2 indicators (with at least 1 reflecting active decision-making at Levels 3/4).</p>
+            <div id="accordion-container"></div>
+        </div>
+
+        <div class="submit-section">
+            <button id="final-submit" class="btn" disabled>Submit Evaluation</button>
+        </div>
+
+        <div id="results-card">
+            <!-- Populated dynamically via JS -->
+        </div>
+    </div>
+
+    <script>
+        const setupParams = [
+            { id: "speed", label: "Speed" },
+            { id: "quality", label: "Quality" },
+            { id: "ownership", label: "Ownership" },
+            { id: "risk", label: "Risk" }
+        ];
+
+        const rubricData = [
+            {
+                id: "agency",
+                title: "Agency",
+                description: "Who defined the problem, constraints, and decisions?",
+                levels: [
+                    {
+                        level: 4,
+                        label: "Level 4 — Human-Directed Control",
+                        indicators: [
+                            { text: "I defined clear constraints or criteria that shaped the solution space", decision: true },
+                            { text: "I made or changed key decisions independent of AI suggestions", decision: true },
+                            { text: "I redirected the task or approach based on my own judgment", decision: true }
+                        ],
+                        disqualifiers: [
+                            { text: "I relied on AI to determine the approach or criteria", targets: [4] },
+                            { text: "I accepted the initial direction without modifying it", targets: [4] }
+                        ]
+                    },
+                    {
+                        level: 3,
+                        label: "Level 3 — Human-Shaped Control",
+                        indicators: [
+                            { text: "I provided direction or partial constraints that guided AI output", decision: true },
+                            { text: "I selected between AI-generated options based on my own criteria", decision: true },
+                            { text: "I adjusted or refined the approach during the process", decision: true }
+                        ],
+                        disqualifiers: [
+                            { text: "I did not define any meaningful constraints or criteria", targets: [4, 3] }
+                        ]
+                    },
+                    {
+                        level: 2,
+                        label: "Level 2 — AI-Guided Direction",
+                        indicators: [
+                            { text: "I provided a general goal, but AI determined the approach", decision: false },
+                            { text: "I selected from AI-generated options without shaping criteria", decision: false },
+                            { text: "I followed the AI’s suggested direction with minimal adjustment", decision: false }
+                        ],
+                        disqualifiers: [
+                            { text: "I did not define or apply any criteria to guide decisions", targets: [4, 3] }
+                        ]
+                    },
+                    {
+                        level: 1,
+                        label: "Level 1 — AI-Directed Process",
+                        indicators: [
+                            { text: "AI determined both the approach and decisions", decision: false },
+                            { text: "My role was primarily prompting and choosing outputs", decision: false },
+                            { text: "I cannot explain why specific decisions or directions were taken", decision: false }
+                        ],
+                        disqualifiers: []
+                    }
+                ],
+                confidence: "I can point to at least one decision where I overrode, redirected, or constrained the AI"
+            },
+            {
+                id: "cognitive",
+                title: "Cognitive Engagement",
+                description: "Did you actively interrogate or make sense of ideas rather than simply relay AI output?",
+                levels: [
+                    {
+                        level: 4,
+                        label: "Level 4 — Active Sense-Making",
+                        indicators: [
+                            { text: "I extended an AI-generated idea by adding my own reasoning, example, or implication", decision: true },
+                            { text: "I challenged or identified a limitation, gap, or flaw in the AI’s response", decision: true },
+                            { text: "I redirected the line of thinking based on my own interpretation", decision: true }
+                        ],
+                        disqualifiers: [
+                            { text: "I accepted key explanations or reasoning without questioning or extending them", targets: [4] },
+                            { text: "I cannot point to where I developed an idea beyond what AI provided", targets: [4] }
+                        ]
+                    },
+                    {
+                        level: 3,
+                        label: "Level 3 — Guided Engagement",
+                        indicators: [
+                            { text: "I asked follow-up questions that clarified or expanded an idea", decision: true },
+                            { text: "I selected between AI-generated ideas based on my understanding", decision: true },
+                            { text: "I connected AI output to something I already knew or was trying to solve", decision: true }
+                        ],
+                        disqualifiers: [
+                            { text: "I did not question, extend, or reinterpret any idea that influenced my decisions or direction", targets: [4, 3] }
+                        ]
+                    },
+                    {
+                        level: 2,
+                        label: "Level 2 — Passive Processing",
+                        indicators: [
+                            { text: "I accepted AI explanations or ideas with minimal questioning", decision: false },
+                            { text: "I asked for more detail but did not change or challenge the direction", decision: false },
+                            { text: "I relied on AI to continue the thinking process without adding my own", decision: false }
+                        ],
+                        disqualifiers: [
+                            { text: "I did not independently interpret or challenge any key idea", targets: [4, 3] }
+                        ]
+                    },
+                    {
+                        level: 1,
+                        label: "Level 1 — Outsourced Cognition",
+                        indicators: [
+                            { text: "I relied on AI to generate, explain, and carry the thinking process", decision: false },
+                            { text: "I did not meaningfully engage with or reflect on the ideas presented", decision: false },
+                            { text: "I cannot explain the reasoning behind the output without referring back to AI", decision: false }
+                        ],
+                        disqualifiers: []
+                    }
+                ],
+                confidence: "I can point to a moment where I changed, challenged, or extended an idea"
+            },
+            {
+                id: "evidentiary",
+                title: "Evidentiary Control",
+                description: "Who selected, verified, and interpreted the evidence?",
+                levels: [
+                    {
+                        level: 4,
+                        label: "Level 4 — Human-Controlled Evidence",
+                        indicators: [
+                            { text: "I independently selected key sources or rejected AI-suggested ones", decision: true },
+                            { text: "I verified all major claims directly against real-world sources", decision: true },
+                            { text: "I determined what counted as sufficient evidence for the argument", decision: true }
+                        ],
+                        disqualifiers: [
+                            { text: "I relied primarily on AI-selected sources without review", targets: [4] },
+                            { text: "I cannot trace key claims back to sources I actually checked", targets: [4] }
+                        ]
+                    },
+                    {
+                        level: 3,
+                        label: "Level 3 — Human-Governed Evidence",
+                        indicators: [
+                            { text: "I reviewed multiple AI-suggested sources before choosing what to use", decision: true },
+                            { text: "I verified key claims", decision: true },
+                            { text: "I rejected, replaced, or supplemented at least one AI-provided source", decision: true }
+                        ],
+                        disqualifiers: [
+                            { text: "I did not reject or replace any AI-provided evidence", targets: [4, 3] }
+                        ]
+                    },
+                    {
+                        level: 2,
+                        label: "Level 2 — AI-Suggested Evidence",
+                        indicators: [
+                            { text: "I used AI-provided sources or claims with minimal verification", decision: false },
+                            { text: "I checked only one or two items and assumed the rest were valid", decision: false },
+                            { text: "I relied on AI to determine what evidence was relevant", decision: false }
+                        ],
+                        disqualifiers: [
+                            { text: "I did not independently verify or challenge any key claim", targets: [4, 3] }
+                        ]
+                    },
+                    {
+                        level: 1,
+                        label: "Level 1 — Unverified AI Evidence",
+                        indicators: [
+                            { text: "I accepted claims or sources directly from AI without checking them", decision: false },
+                            { text: "I cannot provide a real-world source for key assertions", decision: false },
+                            { text: "I assumed accuracy based on how confident or polished the output sounded", decision: false }
+                        ],
+                        disqualifiers: []
+                    }
+                ],
+                confidence: "I can link, cite, or point to sources I personally reviewed for each major claim"
+            },
+            {
+                id: "authorship",
+                title: "Authorship Integrity",
+                description: "Is your claim to authorship justified given how the work was produced?",
+                levels: [
+                    {
+                        level: 4,
+                        label: "Level 4 — Defensible Human Authorship",
+                        indicators: [
+                            { text: "I created the core argument or structure before or independently of AI", decision: true },
+                            { text: "I rewrote AI-generated content to change meaning or direction", decision: true },
+                            { text: "I rejected or replaced at least one AI-generated argument or section", decision: true }
+                        ],
+                        disqualifiers: [
+                            { text: "I kept the AI’s original structure or argument largely intact", targets: [4] },
+                            { text: "My edits were mostly wording or tone adjustments", targets: [4] }
+                        ]
+                    },
+                    {
+                        level: 3,
+                        label: "Level 3 — Human-Led Authorship",
+                        indicators: [
+                            { text: "I provided direction or partial structure that guided AI output", decision: true },
+                            { text: "I made at least one structural or meaning-level change to AI content", decision: true },
+                            { text: "I removed or modified AI content that did not fit my intent", decision: true }
+                        ],
+                        disqualifiers: [
+                            { text: "I cannot point to a specific change that altered meaning or structure", targets: [4, 3] }
+                        ]
+                    },
+                    {
+                        level: 2,
+                        label: "Level 2 — AI-Structured Work",
+                        indicators: [
+                            { text: "I used AI to generate full sections or drafts and kept most of it", decision: false },
+                            { text: "My edits were primarily wording, tone, or small additions", decision: false },
+                            { text: "I selected from AI options rather than generating my own structure", decision: false }
+                        ],
+                        disqualifiers: [
+                            { text: "I made no structural or meaning-level changes", targets: [4, 3] }
+                        ]
+                    },
+                    {
+                        level: 1,
+                        label: "Level 1 — AI-Derived Work",
+                        indicators: [
+                            { text: "I accepted AI-generated structure, argument, and conclusions as-is", decision: false },
+                            { text: "My role was mainly prompting and light editing", decision: false },
+                            { text: "I cannot explain how the argument was built without AI", decision: false }
+                        ],
+                        disqualifiers: []
+                    }
+                ],
+                confidence: "I can point to a specific part of the work that is clearly mine in structure, meaning, or argument"
+            }
+        ];
+
+        // Central Application State
+        const state = {
+            setup: { speed: 2, quality: 2, ownership: 2, risk: 2 },
+            domains: {}
+        };
+        rubricData.forEach(d => { state.domains[d.id] = { locked: false, level: null }; });
+
+        // App Initialization
+        function initApp() {
+            renderSetup();
+            renderAccordion();
+            document.getElementById('final-submit').addEventListener('click', calculateFinalResults);
+        }
+
+        function renderSetup() {
+            const grid = document.getElementById('setup-grid');
+            let html = '';
+            setupParams.forEach(param => {
+                html += `
+                    <div class="setup-item">
+                        <div class="setup-label">${param.label}</div>
+                        <div class="radio-group">
+                            <label><input type="radio" name="${param.id}" value="1" onchange="updateSetup('${param.id}', 1)"><span class="radio-label-content">Low</span></label>
+                            <label><input type="radio" name="${param.id}" value="2" checked onchange="updateSetup('${param.id}', 2)"><span class="radio-label-content">Med</span></label>
+                            <label><input type="radio" name="${param.id}" value="3" onchange="updateSetup('${param.id}', 3)"><span class="radio-label-content">High</span></label>
+                        </div>
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        function updateSetup(id, val) { state.setup[id] = parseInt(val); }
+
+        function renderAccordion() {
+            const container = document.getElementById('accordion-container');
+            let html = '';
+
+            rubricData.forEach(domain => {
+                html += `
+                    <div class="accordion-item" id="domain-item-${domain.id}">
+                        <div class="accordion-header" onclick="toggleAccordion('${domain.id}')">
+                            <div class="accordion-title-area">
+                                <h3 class="accordion-title">${domain.title}</h3>
+                                <div class="accordion-desc">${domain.description}</div>
+                            </div>
+                            <div class="accordion-status">
+                                <span class="status-badge" id="badge-${domain.id}">Pending</span>
+                            </div>
+                        </div>
+                        <div class="accordion-body" id="body-${domain.id}">
+                `;
+
+                domain.levels.forEach(lvl => {
+                    html += `
+                        <div class="level-block">
+                            <h4 class="level-title">${lvl.label}</h4>
+                    `;
+                    
+                    lvl.indicators.forEach((ind) => {
+                        html += `
+                            <label class="checkbox-item">
+                                <input type="checkbox" class="ind-cb" data-level="${lvl.level}" data-decision="${ind.decision}">
+                                <span class="checkbox-text">${ind.text}</span>
+                            </label>
+                        `;
+                    });
+
+                    if (lvl.disqualifiers && lvl.disqualifiers.length > 0) {
+                        html += `<div class="disqualifier-label">Disqualifiers</div>`;
+                        lvl.disqualifiers.forEach((disq) => {
+                            const targetStr = disq.targets.join(',');
+                            html += `
+                                <label class="checkbox-item disqualifier-item">
+                                    <input type="checkbox" class="disq-cb" data-targets="${targetStr}">
+                                    <span class="checkbox-text">${disq.text}</span>
+                                </label>
+                            `;
+                        });
+                    }
+                    html += `</div>`;
+                });
+
+                html += `
+                    <div class="confidence-check">
+                        <label class="checkbox-item" style="margin-bottom: 0;">
+                            <input type="checkbox" class="conf-cb">
+                            <span class="checkbox-text"><strong>Confidence Check:</strong> ${domain.confidence}</span>
+                        </label>
+                        <span class="conf-error">Leaves final defensible level output at risk of a 1-level dropdown if unchecked.</span>
+                    </div>
+                    <div class="panel-actions">
+                        <button class="btn" id="btn-lock-${domain.id}" onclick="lockDomain('${domain.id}', event)">Lock Response</button>
+                        <button class="btn btn-outline" id="btn-unlock-${domain.id}" style="display: none;" onclick="unlockDomain('${domain.id}', event)">Unlock to Edit</button>
+                    </div>
+                </div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleAccordion(id) {
+            const item = document.getElementById(`domain-item-${id}`);
+            if (item.classList.contains('open')) {
+                item.classList.remove('open');
+            } else {
+                document.querySelectorAll('.accordion-item').forEach(el => el.classList.remove('open'));
+                item.classList.add('open');
+            }
+        }
+
+        function calculateDomainScore(domainId) {
+            const body = document.getElementById(`body-${domainId}`);
+            const indChecks = body.querySelectorAll('.ind-cb');
+            const disqChecks = body.querySelectorAll('.disq-cb');
+            const confCheck = body.querySelector('.conf-cb').checked;
+            
+            const indicatorsCount = { 4: 0, 3: 0, 2: 0, 1: 0 };
+            const hasDecision = { 4: false, 3: false, 2: false, 1: false };
+            
+            indChecks.forEach(cb => {
+                if (cb.checked) {
+                    const l = parseInt(cb.dataset.level);
+                    indicatorsCount[l]++;
+                    if (cb.dataset.decision === "true") hasDecision[l] = true;
+                }
+            });
+            
+            const activeDisqualifiers = new Set();
+            disqChecks.forEach(cb => {
+                if (cb.checked) {
+                    cb.dataset.targets.split(',').forEach(lvl => activeDisqualifiers.add(parseInt(lvl)));
+                }
+            });
+            
+            let baseLevel = 1; 
+            for (let L = 4; L >= 1; L--) {
+                let meetsIndicators = (L === 1) ? true : (indicatorsCount[L] >= 2);
+                let hasNoDisq = !activeDisqualifiers.has(L);
+                let meetsDecision = (L === 4 || L === 3) ? hasDecision[L] : true;
+                
+                if (meetsIndicators && hasNoDisq && meetsDecision) {
+                    baseLevel = L;
+                    break;
+                }
+            }
+            
+            return confCheck ? baseLevel : Math.max(1, baseLevel - 1);
+        }
+
+        function lockDomain(domainId, event) {
+            if (event) event.stopPropagation();
+            
+            const finalLevel = calculateDomainScore(domainId);
+            state.domains[domainId].locked = true;
+            state.domains[domainId].level = finalLevel;
+            
+            const item = document.getElementById(`domain-item-${domainId}`);
+            const badge = document.getElementById(`badge-${domainId}`);
+            
+            item.classList.add('locked');
+            item.classList.remove('open');
+            badge.textContent = `Locked at L${finalLevel}`;
+            badge.classList.add('locked');
+            
+            const body = document.getElementById(`body-${domainId}`);
+            body.querySelectorAll('input').forEach(inp => inp.disabled = true);
+            
+            document.getElementById(`btn-lock-${domainId}`).style.display = 'none';
+            document.getElementById(`btn-unlock-${domainId}`).style.display = 'inline-block';
+            
+            checkSubmit();
+        }
+
+        function unlockDomain(domainId, event) {
+            if (event) event.stopPropagation();
+            
+            state.domains[domainId].locked = false;
+            
+            const item = document.getElementById(`domain-item-${domainId}`);
+            const badge = document.getElementById(`badge-${domainId}`);
+            
+            item.classList.remove('locked');
+            badge.textContent = `Pending`;
+            badge.classList.remove('locked');
+            
+            const body = document.getElementById(`body-${domainId}`);
+            body.querySelectorAll('input').forEach(inp => inp.disabled = false);
+            
+            document.getElementById(`btn-lock-${domainId}`).style.display = 'inline-block';
+            document.getElementById(`btn-unlock-${domainId}`).style.display = 'none';
+            
+            checkSubmit();
+        }
+
+        function checkSubmit() {
+            const allLocked = Object.values(state.domains).every(d => d.locked);
+            document.getElementById('final-submit').disabled = !allLocked;
+        }
+
+        function calculateFinalResults() {
+            // Data-driven calculation designed to map "all mediums" to precisely 2.5
+            const rawScore = (state.setup.ownership * 2.5) + (state.setup.risk * 2.0) + (state.setup.quality * 1.0) - (state.setup.speed * 1.5);
+            // rawScore spans from 1.0 (all low + fast) to 15.0 (all high + slow)
+            
+            let expectedValue = 1.0 + ((rawScore - 1.0) / 14.0) * 3.0;
+            expectedValue = Math.max(1.0, Math.min(4.0, expectedValue));
+            
+            const expLower = Math.max(1.0, expectedValue - 0.5);
+            const expUpper = Math.min(4.0, expectedValue + 0.5);
+            
+            let expDesc = "Upper Band";
+            if (expectedValue < 1.8) expDesc = "Lower Band";
+            else if (expectedValue <= 3.2) expDesc = "Mid Band";
+            
+            // Calculate Actual Score
+            let totalLevel = 0;
+            let breakdownHtml = `<div class="breakdown-list">`;
+            
+            rubricData.forEach(d => {
+                const lvl = state.domains[d.id].level;
+                totalLevel += lvl;
+                breakdownHtml += `
+                    <div class="breakdown-row">
+                        <strong>${d.title}</strong>
+                        <span>Level ${lvl}</span>
+                    </div>
+                `;
+            });
+            breakdownHtml += `</div>`;
+            
+            const actualAverage = totalLevel / 4;
+            
+            // Determine Status
+            let alignmentStatus = "";
+            let statusClass = "";
+            let statusMsg = "";
+            
+            if (actualAverage < expLower) {
+                alignmentStatus = "Below Expected Range";
+                statusClass = "align-below";
+                statusMsg = "Indicates reduced ownership relative to the task conditions you set. This is not necessarily a failure, but represents lower manual agency than the task parameters required.";
+            } else if (actualAverage > expUpper) {
+                alignmentStatus = "Above Expected Range";
+                statusClass = "align-above";
+                statusMsg = "Indicates possible over-investment. You exerted more manual authorship than the task's stated constraints likely required.";
+            } else {
+                alignmentStatus = "Within Expected Range";
+                statusClass = "align-within";
+                statusMsg = "Your empirical authorship behavior aligns directly with the targeted expectations for this task.";
+            }
+            
+            const bandLeft = ((expLower - 1) / 3) * 100;
+            const bandWidth = ((expUpper - expLower) / 3) * 100;
+            const markerPos = ((actualAverage - 1) / 3) * 100;
+
+            const visualBarHtml = `
+                <div style="margin: 32px 0 32px; text-align: left;">
+                    <h4 style="margin: 0 0 16px; font-size: 14px; color: var(--secondary); text-transform: uppercase; text-align: center;">Alignment Visualization</h4>
+                    <div style="position: relative; height: 16px; background: #E2E8F0; border-radius: 10px; margin: 0 12px;">
+                        <!-- Expected Band -->
+                        <div style="position: absolute; left: ${bandLeft}%; width: ${bandWidth}%; top: 0; height: 100%; background: #90CDF4; border-radius: 8px;"></div>
+                        <!-- Actual Marker -->
+                        <div style="position: absolute; left: ${markerPos}%; top: -6px; height: 28px; width: 6px; background: #2B6CB0; border-radius: 4px; transform: translateX(-50%); box-shadow: 0 0 0 2px white; z-index: 10;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 12px; padding: 0 12px; font-size: 12px; color: var(--secondary); font-weight: 600;">
+                        <span>Level 1</span>
+                        <span>Level 2</span>
+                        <span>Level 3</span>
+                        <span>Level 4</span>
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 24px; margin-top: 16px; font-size: 12px; color: var(--secondary);">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 12px; height: 12px; background: #90CDF4; border-radius: 3px;"></div>
+                            <span>Expected Targeted Band</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 6px; height: 12px; background: #2B6CB0; border-radius: 2px;"></div>
+                            <span>Observed Average</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Render Result Card
+            const card = document.getElementById('results-card');
+            card.innerHTML = `
+                <div class="results-header">
+                    <h2>Evaluation Alignment</h2>
+                    <p>Comparison of measured behavior against targeted parameters</p>
+                </div>
+                
+                <div class="results-grid">
+                    <div class="result-box">
+                        <h4>Target Range</h4>
+                        <div class="val">${expLower.toFixed(1)} - ${expUpper.toFixed(1)}</div>
+                        <div class="desc">${expDesc}</div>
+                    </div>
+                    <div class="result-box">
+                        <h4>Observed Authorship Level</h4>
+                        <div class="val">${actualAverage.toFixed(1)}</div>
+                        <div class="desc">Average Domain Level</div>
+                    </div>
+                </div>
+
+                <div class="alignment-banner ${statusClass}">
+                    <h3>${alignmentStatus}</h3>
+                    <p>${statusMsg}</p>
+                </div>
+                
+                ${visualBarHtml}
+
+                <div style="margin-bottom: 24px; text-align: left;">
+                    <h4 style="margin: 0 0 12px; font-size: 14px; color: var(--secondary); text-transform: uppercase;">Domain Breakdown</h4>
+                    ${breakdownHtml}
+                </div>
+                
+                <div style="text-align: center; margin-top: 32px;">
+                    <button class="btn btn-outline" onclick="location.reload()">Reset Evaluator</button>
+                </div>
+            `;
+            
+            card.style.display = 'block';
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Disable Setup and Main Action
+            document.querySelectorAll('#task-setup input').forEach(inp => inp.disabled = true);
+            document.getElementById('final-submit').disabled = true;
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
