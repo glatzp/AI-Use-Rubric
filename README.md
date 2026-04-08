@@ -1,6 +1,7 @@
 # AI Authorship Evaluator
+A measurement tool for authorship and human control in AI-assisted work.
 
-System Context
+##System Context
 
 This tool is part of a broader research system examining how AI systems can shift task definitions during multi-turn interaction.
 
