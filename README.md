@@ -1,4 +1,4 @@
-# AI Authorship Alignment Evaluator
+# AI Authorship Evaluator
 
 System Context
 
