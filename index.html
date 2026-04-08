@@ -699,15 +699,15 @@
             if (actualAverage < expLower) {
                 alignmentStatus = "Below Expected Range";
                 statusClass = "align-below";
-                statusMsg = "Indicates reduced ownership relative to the task conditions you set. This is not necessarily a failure, but represents lower manual agency than the task parameters required.";
+                statusMsg = "Observed authorship falls below the expected range derived from the task conditions entered. This indicates greater reliance on AI than specified in the task setup.";
             } else if (actualAverage > expUpper) {
                 alignmentStatus = "Above Expected Range";
                 statusClass = "align-above";
-                statusMsg = "Indicates possible over-investment. You exerted more manual authorship than the task's stated constraints likely required.";
+                statusMsg = "Observed authorship exceeds the expected range derived from the task conditions entered. This indicates higher-than-expected human intervention relative to the defined setup.";
             } else {
                 alignmentStatus = "Within Expected Range";
                 statusClass = "align-within";
-                statusMsg = "Your empirical authorship behavior aligns directly with the targeted expectations for this task.";
+                statusMsg = "Observed authorship falls within the expected range derived from the task conditions entered.";
             }
             
             const bandLeft = ((expLower - 1) / 3) * 100;
@@ -716,7 +716,7 @@
 
             const visualBarHtml = `
                 <div style="margin: 32px 0 32px; text-align: left;">
-                    <h4 style="margin: 0 0 16px; font-size: 14px; color: var(--secondary); text-transform: uppercase; text-align: center;">Alignment Visualization</h4>
+                    <h4 style="margin: 0 0 16px; font-size: 14px; color: var(--secondary); text-transform: uppercase; text-align: center;">Authorship Fit Visualization</h4>
                     <div style="position: relative; height: 16px; background: #E2E8F0; border-radius: 10px; margin: 0 12px;">
                         <!-- Expected Band -->
                         <div style="position: absolute; left: ${bandLeft}%; width: ${bandWidth}%; top: 0; height: 100%; background: #90CDF4; border-radius: 8px;"></div>
@@ -732,7 +732,7 @@
                     <div style="display: flex; justify-content: center; gap: 24px; margin-top: 16px; font-size: 12px; color: var(--secondary);">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <div style="width: 12px; height: 12px; background: #90CDF4; border-radius: 3px;"></div>
-                            <span>Expected Targeted Band</span>
+                            <span>Expected Authorship Band</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <div style="width: 6px; height: 12px; background: #2B6CB0; border-radius: 2px;"></div>
@@ -746,13 +746,13 @@
             const card = document.getElementById('results-card');
             card.innerHTML = `
                 <div class="results-header">
-                    <h2>Evaluation Alignment</h2>
-                    <p>Comparison of measured behavior against targeted parameters</p>
+                    <h2>Authorship Fit</h2>
+                    <p>Comparison of observed authorship behavior against expected task conditions</p>
                 </div>
                 
                 <div class="results-grid">
                     <div class="result-box">
-                        <h4>Target Range</h4>
+                        <h4>Expected Authorship Range</h4>
                         <div class="val">${expLower.toFixed(1)} - ${expUpper.toFixed(1)}</div>
                         <div class="desc">${expDesc}</div>
                     </div>
@@ -769,6 +769,11 @@
                 </div>
                 
                 ${visualBarHtml}
+
+                <div style="margin-bottom: 32px; padding: 16px; background: #EBF8FF; border-left: 4px solid var(--accent); border-radius: var(--radius); font-size: 13px; color: var(--primary); text-align: left;">
+                    <p style="margin: 0 0 8px;">This evaluation measures authorship and human control, not task alignment. A task can fall within the expected authorship range while still shifting from its original objective.</p>
+                    <p style="margin: 0;">Frame instability can reduce human control without violating constraints. This tool measures that change in authorship behavior.</p>
+                </div>
 
                 <div style="margin-bottom: 24px; text-align: left;">
                     <h4 style="margin: 0 0 12px; font-size: 14px; color: var(--secondary); text-transform: uppercase;">Domain Breakdown</h4>
