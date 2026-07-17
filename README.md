@@ -1,10 +1,14 @@
 # AI Authorship Alignment Evaluator
 
-An interactive research artifact exploring how authorship changes as AI participates in planning, reasoning, evidence selection, and writing.
+*A structured assessment tool for measuring human control in AI-assisted work.*
 
-## ▶ Try the Live Demo
+## 🚀 Live Demo
 
-<demo link>
+**▶ Launch the Interactive Evaluator**
+
+https://glatzp.github.io/ai-authorship-evaluator/
+
+![Authorship Fit](Authorship%20Fit%20Assessment.png)
 
 ## AI Authorship Evaluator
 
