@@ -1,7 +1,5 @@
 # AI Authorship Alignment Evaluator
 
-*A structured assessment tool for measuring human control in AI-assisted work.*
-
 AI-assisted work can appear successful even as control over planning, reasoning, and evidence selection quietly shifts away from the human.
 
 An interactive research artifact exploring how authorship changes as AI participates in planning, reasoning, evidence selection, and writing.
