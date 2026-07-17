@@ -1,7 +1,20 @@
-# AI Authorship Evaluator
+# AI Authorship Alignment Evaluator
+
+*A structured assessment tool for measuring human control in AI-assisted work.*
+
+An interactive research artifact exploring how authorship changes as AI participates in planning, reasoning, evidence selection, and writing.
+
+## ▶ Try the Live Demo
+
+<demo link>
+
+## AI Authorship Evaluator
+
+<img width="1203" height="1666" alt="Authorship Fit Assessment" src="https://github.com/user-attachments/assets/a9d672ad-a41c-417b-9b55-a2c43815dd5f" />
+
 A measurement tool for authorship and human control in AI-assisted work.
 
-##System Context
+## System Context
 
 This tool is part of a broader research system examining how AI systems can shift task definitions during multi-turn interaction.
 
@@ -40,6 +53,10 @@ These domains collectively measure:
 
 ---
 
+## Evaluation Process
+<img width="889" height="387" alt="Authorship Evaluation process" src="https://github.com/user-attachments/assets/98612d84-a910-4276-bf93-e6a77815548f" />
+
+
 ## Task Conditions
 
 Before evaluation, the user defines the task environment:
@@ -61,7 +78,7 @@ The system:
 2. Measures observed authorship behavior using structured criteria
 3. Compares expected vs observed authorship
 
-This produces:
+## This produces:
 
 > **Authorship Fit** — the relationship between task demands and actual human control
 
