@@ -8,8 +8,6 @@
 
 https://glatzp.github.io/ai-authorship-evaluator/
 
-![Authorship Fit](Authorship%20Fit%20Assessment.png)
-
 ## AI Authorship Evaluator
 
 <img width="1203" height="1666" alt="Authorship Fit Assessment" src="https://github.com/user-attachments/assets/a9d672ad-a41c-417b-9b55-a2c43815dd5f" /> 
